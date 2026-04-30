@@ -1,0 +1,75 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Add Patient - Smart Hospital Management System{% endblock %}
+{% block page_title %}Add New Patient{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); padding: 30px;">
+        <h4 style="color: #2d3748; font-weight: 700; margin-bottom: 25px;">
+            <i class="fas fa-user-plus"></i> New Patient Registration
+        </h4>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-user"></i> Full Name *</label>
+                <input type="text" class="form-control" name="name" placeholder="Enter full name" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-envelope"></i> Email Address *</label>
+                <input type="email" class="form-control" name="email" placeholder="Enter email" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-lock"></i> Password *</label>
+                <input type="password" class="form-control" name="password" placeholder="Enter password" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-birthday-cake"></i> Age</label>
+                        <input type="number" class="form-control" name="age" placeholder="Age" min="0" max="120">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-venus-mars"></i> Gender</label>
+                        <select class="form-control" name="gender">
+                            <option value="">Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-phone"></i> Phone Number</label>
+                <input type="tel" class="form-control" name="phone" placeholder="Enter phone number">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-map-marker-alt"></i> Address</label>
+                <textarea class="form-control" name="address" placeholder="Enter address" rows="3"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-stethoscope"></i> Medical Information</label>
+                <textarea class="form-control" name="medical_info" placeholder="Enter medical history or any relevant information" rows="3"></textarea>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;">
+                <a href="{{ url_for('patients') }}" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Add Patient
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

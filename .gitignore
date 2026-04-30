@@ -1,0 +1,8 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+health.db
+Uploads/
+.DS_Store
+*.log

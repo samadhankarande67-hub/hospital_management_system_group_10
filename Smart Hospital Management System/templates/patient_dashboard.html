@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - Smart Hospital Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Violet Palette */
+            --violet-900: #3730A3;
+            --violet-700: #5B21B6;
+            --violet-500: #8B5CF6;
+            --green-500: #10B981;
+            --green-600: #059669;
+            --sidebar-dark: #2C3E50;
+            --sidebar-active: #4F46E5;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            /* FIX 1: Allow global scrolling if needed */
+            overflow: auto; 
+        }
+        .sidebar-item-active {
+            background-color: var(--sidebar-active);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .info-card {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease-in-out;
+        }
+        .info-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            transform: translateY(-1px);
+        }
+        h1 { color: #6a0dad; }
+    .symptom-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .symptom {
+      padding: 5px 8px;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .symptom.selected {
+      background: #6a0dad;
+      color: white;
+      border-color: #6a0dad;
+    }
+    button {
+      margin-top: 20px;
+      background: #6a0dad;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover { background: #7c1fe6; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="fixed top-0 left-64 right-0 z-10 p-4">
+            {% for category, message in messages %}
+                <div class="p-3 mb-2 rounded-lg text-sm text-center bg-{{ 'green' if category == 'success' else 'red' if category == 'danger' else 'blue' }}-100 text-{{ 'green' if category == 'success' else 'red' if category == 'danger' else 'blue' }}-800" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+
+    <div id="patient-dashboard-view" class="w-full h-full flex-grow">
+        <div class="flex h-full min-h-screen">
+            <aside class="w-64 text-white shadow-xl flex flex-col py-4 px-2 sticky top-0" style="background-color: var(--sidebar-dark);">
+                <div class="px-4 pt-4 pb-6 text-xl font-bold text-center text-violet-500 border-b border-gray-700 mb-4">
+                    👋 Hello, {{ user_name or "Patient" }}!
+                </div>
+                <nav class="flex-grow space-y-2">
+                    <a href="{{ url_for('patient_dashboard') }}" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-200 hover:bg-gray-700 transition sidebar-nav-item {% if active_section == 'symptom' or active_section == 'results' or not active_section %}sidebar-item-active{% endif %}" data-section="symptom">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/></svg>
+                        <span>Symptom Input</span>
+                    </a>
+                    <button onclick="showPatientSection('chat')" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-200 hover:bg-gray-700 transition sidebar-nav-item {% if active_section == 'chat' %}sidebar-item-active{% endif %}" data-section="chat">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8L3 21Z"/></svg>
+                        <span>AI Chat</span>
+                    </button>
+            
+                        
+                    </button>
+                    <a href="{{ url_for('book_appointment') }}" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-200 hover:bg-gray-700 transition sidebar-nav-item {% if active_section == 'appointments' %}sidebar-item-active{% endif %}" data-section="appointments">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m10 16 2 2 4-4"/></svg>
+    <span>Appointments</span>
+</a>
+                    
+                    <button onclick="showPatientSection('records')" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-200 hover:bg-gray-700 transition sidebar-nav-item {% if active_section == 'records' %}sidebar-item-active{% endif %}" data-section="records">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 13l2 2 4-4"/></svg>
+                        <span>Health Records</span>
+                    </button>
+                    <button onclick="showPatientSection('prediction')" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-200 hover:bg-gray-700 transition sidebar-nav-item {% if active_section == 'prediction' %}sidebar-item-active{% endif %}" data-section="prediction">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s2-4 6-4 8 4 6 4 2 4-6 4-8-4-6-4"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>Disease Prediction</span>
+                    </button>
+                </nav>
+                <div class="mt-auto px-4 pt-4 border-t border-gray-700">
+                    <a href="{{ url_for('logout') }}" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-gray-700 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </aside>
+            
+            <div class="flex-1 p-8 overflow-y-auto bg-gray-50">
+                <h1 class="text-3xl font-extrabold text-gray-800 mb-8 border-b pb-3" id="dashboard-title"></h1>
+
+                <div id="patient-sections-container">
+                    
+                    <section id="patient-symptom-section" class="patient-section {% if active_section == 'results' or (active_section and active_section != 'symptom') %}hidden{% endif %}">
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">Analyze Your Symptoms</h3>
+                            <form method="POST" action="{{ url_for('symptom_analysis') }}" class="space-y-6">
+                                <label for="symptoms-input" class="block text-sm font-medium text-gray-600">Please describe your symptoms (e.g., headache, cough, fever):</label>
+                                <textarea id="symptoms-input" name="symptoms_input" rows="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-violet-500 focus:border-violet-500 transition" placeholder="e.g., I have a persistent headache, slight fever, and body aches for the last two days."></textarea>
+                                <button type="submit" class="bg-violet-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-violet-800 transition info-card">
+                                    Analyze Symptoms
+                                </button>
+                            </form>
+                        </div>
+                    </section>
+                    
+                    {% if active_section == 'results' %}
+                    
+                    <section id="patient-results-section" class="patient-section">
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 space-y-8">
+                            <h2 class="text-2xl font-bold text-violet-700 mb-6">Analysis for: <span class="text-gray-800 font-medium">{{ symptoms_text }}</span></h2>
+                            
+                            <div class="p-5 rounded-xl border border-red-300 bg-red-50">
+                                <h3 class="text-lg font-bold text-red-800 mb-3 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-red-600"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg> Critical Advice: When to Seek Medical Help</h3>
+                                {% if symptoms_data %}
+                                <ul class="list-disc ml-6 text-gray-700 space-y-2">
+                                    {% for symptom in symptoms_data %}
+                                        <li><strong class="text-red-700">{{ symptom.name|title }}:</strong> {{ symptom.advice }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <p class="text-gray-700">No specific medical advice found for top matching symptoms.</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">💊 Recommended Home & OTC Remedies</h3>
+                                {% if recommendations %}
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    {% for name, rtype, instructions, disclaimer in recommendations %}
+                                    <div class="p-4 rounded-lg border-l-4 
+                                        {% if rtype == 'Home Remedy' %}border-amber-500 bg-amber-50
+                                        {% elif rtype == 'Dietary' %}border-blue-500 bg-blue-50
+                                        {% elif rtype == 'Ayurvedic' %}border-purple-500 bg-purple-50
+                                        {% else %}border-green-500 bg-green-50{% endif %} 
+                                        shadow-sm">
+                                        <p class="font-semibold text-gray-800">{{ name }} <span class="text-xs text-violet-600">({{ rtype }})</span></p>
+                                        <p class="text-sm text-gray-700 mt-1">{{ instructions }}</p>
+                                        {% if disclaimer %}
+                                            <p class="text-xs text-red-600 mt-1 font-medium">⚠️ Disclaimer: {{ disclaimer }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-center text-gray-500">No specific remedies matched your symptoms.</p>
+                                {% endif %}
+                            </div>
+                            
+                            {% if doctors %}
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">👨‍⚕️ Top Recommended Doctors</h3>
+                                <p class="text-sm text-gray-600 mb-4">Recommended Specialties: **{% for _, spec_name in specialties %}{{ spec_name }}{% if not loop.last %}, {% endif %}{% endfor %}**</p>
+                                <div class="grid md:grid-cols-3 gap-6">
+                                    {% for doc_id, name, rating, exp, avail, spec, bio in doctors %}
+                                    <div class="bg-white p-4 rounded-xl info-card text-center border border-violet-200">
+                                        <h4 class="text-lg font-bold text-gray-800">{{ name }}</h4>
+                                        <p class="text-violet-700 text-sm mb-1">{{ spec }}</p>
+                                        <p class="text-xs text-gray-500">⭐ {{ rating }}/5 | {{ exp }} yrs exp.</p>
+                                        <p class="text-xs text-gray-500 mb-3 font-medium">Availability: {{ avail }}</p>
+                                        <a href="{{ url_for('book_appointment', doctor_id=doc_id, doctor_name=name) }}" class="w-full bg-green-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition inline-block">
+    Book Appointment
+</a>
+
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-center text-gray-500">No specific doctors found matching the required specialties.</p>
+                            {% endif %}
+
+                        </div>
+                    </section>
+                    {% endif %}
+                    
+                    <section id="patient-chat-section" class="patient-section {% if active_section != 'chat' %}hidden{% endif %}">
+                        <div class="bg-white rounded-xl shadow-lg h-[60vh] flex flex-col">
+                            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                                <div class="flex justify-start">
+                                    <div class="p-3 rounded-xl bg-gray-100 text-gray-800 max-w-xs shadow-sm">
+                                        Hello! 👋 I'm your AI Health Assistant. How can I help you today?
+                                    </div>
+                                </div>
+                            </div>
+                            <form onsubmit="sendChatMessage(event)" class="p-4 border-t border-gray-100">
+                                <div class="flex space-x-3">
+                                    <input type="text" id="chat-input" placeholder="Ask a health question..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-violet-500 focus:border-violet-500 transition">
+                                    <button type="submit" class="bg-violet-700 text-white px-4 py-2 rounded-xl hover:bg-violet-800 transition">
+                                        Send
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+                    
+                    <section id="patient-appointments-section" class="patient-section {% if active_section != 'appointments' %}hidden{% endif %}">
+
+    <!-- Book New Appointment Form -->
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 mb-8">
+        <h3 class="text-xl font-semibold text-violet-700 mb-4 border-b pb-2">📅 Book a New Appointment</h3>
+        
+        <form method="POST" action="{{ url_for('book_appointment') }}" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- Select Doctor -->
+                <div>
+                    <label for="doctor_id" class="block text-sm font-medium text-gray-700">Select Doctor</label>
+                    <select id="doctor_id" name="doctor_id" required 
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
+                                        focus:outline-none focus:ring-violet-500 focus:border-violet-500">
+                        <option value="">-- Choose Doctor --</option>
+                        {% if all_doctors %}
+                            {% for doc in all_doctors %}
+                                
+                                <option value="{{ doc.doctor_id }}" {% if selected_doctor_id == doc.doctor_id %} selected {% endif %}>{{ doc.name }}{% if doc.specialty %} - {{ doc.specialty }}{% endif %}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option disabled>No doctors available</option>
+                        {% endif %}
+                    </select>
+                </div>
+                
+                <!-- Appointment Date -->
+                <div>
+                    <label for="appointment_date" class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="appointment_date" name="appointment_date" required 
+                            min="{{ datetime.date.today().strftime('%Y-%m-%d') }}" 
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
+                                         focus:outline-none focus:ring-violet-500 focus:border-violet-500">
+                </div>
+                
+                <!-- Appointment Time -->
+                <div>
+                    <label for="appointment_time" class="block text-sm font-medium text-gray-700">Time</label>
+                    <input type="time" id="appointment_time" name="appointment_time" required 
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
+                                         focus:outline-none focus:ring-violet-500 focus:border-violet-500">
+                </div>
+            </div>
+
+            <!-- Reason for Visit -->
+            <div>
+                <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Visit (Optional)</label>
+                <textarea id="reason" name="reason" rows="2" 
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
+                                    focus:outline-none focus:ring-violet-500 focus:border-violet-500" 
+                    placeholder="e.g., Follow-up on chronic headache, general check-up."></textarea>
+            </div>
+            
+            <!-- Submit Button -->
+            <button type="submit" 
+                class="bg-violet-700 text-white px-6 py-2 rounded-xl font-semibold hover:bg-violet-800 transition info-card">
+                Request Appointment
+            </button>
+        </form>
+    </div>
+
+    <!-- Appointment History -->
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">🕒 My Appointment History</h3>
+        
+        {% if user_appointments %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for appt in user_appointments %}
+                    <tr>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ appt.doctor_name }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ appt.appointment_date }} at {{ appt.appointment_time }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{{ appt.reason if appt.reason else '—' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if appt.status == 'Approved' %}bg-green-100 text-green-800
+                                {% elif appt.status == 'Rejected' %}bg-red-100 text-red-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ appt.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-gray-500">You have no current or past appointment requests. Book one above!</p>
+        {% endif %}
+    </div>
+</section>
+                
+                                 <section id="patient-records-section" class="patient-section {% if active_section != 'records' %}hidden{% endif %}">
+                        <div class="space-y-8">
+                            
+                                                     <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                                <h3 class="text-xl font-semibold text-violet-700 mb-4 border-b pb-2 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.23"/><path d="M12 18v7"/><path d="m16 21-4 4-4-4"/></svg>
+                                    Upload New Medical Document
+                                </h3>
+                                
+                                <form onsubmit="uploadRecord(event)" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                    <div>
+                                        <label for="document_file" class="block text-sm font-medium text-gray-700">Select File (PDF, JPEG, PNG)</label>
+                                        <input type="file" id="document_file" name="document_file" accept=".pdf,.jpg,.jpeg,.png" required
+                                            class="mt-1 block w-full text-sm text-gray-500
+                                                file:mr-4 file:py-2 file:px-4
+                                                file:rounded-full file:border-0
+                                                file:text-sm file:font-semibold
+                                                file:bg-violet-50 file:text-violet-700
+                                                hover:file:bg-violet-100">
+                                    </div>
+
+                                    <div>
+                                        <label for="document_description" class="block text-sm font-medium text-gray-700">Description / Type</label>
+                                        <input type="text" id="document_description" name="document_description" placeholder="e.g., Blood Test Results, MRI Scan Report"
+                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500">
+                                    </div>
+                                    
+                                    <button type="submit" id="upload-btn"
+                                        class="bg-green-600 text-white px-6 py-2 rounded-xl font-semibold hover:bg-green-700 transition info-card">
+                                        Upload Document
+                                    </button>
+                                    
+                                    <!-- Upload Progress Indicator -->
+                                    <div id="upload-progress" class="hidden">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-700"></div>
+                                            <span class="text-sm text-gray-600">Uploading...</span>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                                <h3 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48 1.48 4 1.48s3.06-.54 4-1.48L21.41 17c.94-.94 1.48-2.48 1.48-4s-.54-3.06-1.48-4L12 2z"/><path d="M7 7h.01"/></svg>
+                                    My Health Records
+                                </h3>
+                                
+                                <div id="records-container" class="space-y-4">
+                                    <!-- Records will be loaded here dynamically -->
+                                    <div class="text-center text-gray-500 py-4">
+                                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-700 mx-auto mb-2"></div>
+                                        <p>Loading records...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="patient-prediction-section" class="patient-section {% if active_section != 'prediction' %}hidden{% endif %}">    <h1>🩺 Smart Health Predictor</h1>
+  <p>Select your symptoms below:</p>
+
+  <div class="symptom-list" id="symptoms"></div>
+
+  <button id="predict">Predict Disease</button>
+  <h2 id="result"></h2><div class="p-6 text-center text-gray-500"></div> 
+                   
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPatientSection(section) {
+            // Check if Flask should handle the route (Symptom/Results are handled by Flask redirection)
+            if (section === 'symptom' || section === 'results') {
+                window.location.href = "{{ url_for('patient_dashboard') }}";
+                return;
+            }
+
+            // 1. Hide all patient sections
+            document.querySelectorAll('.patient-section').forEach(el => el.classList.add('hidden'));
+            
+            // 2. Show the target section
+            const targetElement = document.getElementById(`patient-${section}-section`);
+            if (targetElement) {
+                targetElement.classList.remove('hidden');
+            }
+
+            // 3. Update sidebar active state
+            document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
+                btn.classList.remove('sidebar-item-active');
+            });
+
+            const activeBtn = document.querySelector(`.sidebar-nav-item[data-section="${section}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('sidebar-item-active');
+            }
+        
+            // 4. Update main title
+            const titleMap = {
+                'symptom': 'Symptom Checker',
+                'chat': 'AI Health Chat',
+                'appointments': 'Appointments',
+                'records': 'Health Records',
+                'prediction': 'Disease Prediction'
+            };
+            document.getElementById('dashboard-title').textContent = titleMap[section] || 'Dashboard';
+        }
+        function appendMessage(text, sender) {
+          const chatMessages = document.getElementById('chat-messages');
+          const messageDiv = document.createElement('div');
+          const isAI = sender === 'ai' || sender === 'error';
+
+          messageDiv.className = `flex ${isAI ? 'justify-start' : 'justify-end'}`;
+
+          const contentDiv = document.createElement('div');
+          contentDiv.className = `p-3 rounded-xl max-w-xs shadow-sm ${
+          sender === 'user' ? 'bg-violet-500 text-white' :
+          sender === 'ai' ? 'bg-gray-100 text-gray-800' :
+          'bg-red-100 text-red-800 border border-red-300'
+             }`;
+          contentDiv.innerHTML = text.replace(/\n/g, '<br>');
+          messageDiv.appendChild(contentDiv);
+          chatMessages.appendChild(messageDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+        async function sendChatMessage(e) {
+         e.preventDefault();
+         const chatInput = document.getElementById('chat-input');
+         const userMessage = chatInput.value.trim();
+          if (!userMessage) return;
+
+    // Show user message
+         appendMessage(userMessage, 'user');
+         chatInput.value = '';
+         chatInput.disabled = true;
+
+         const sendButton = e.target.querySelector('button');
+         const originalButtonText = sendButton.textContent;
+         sendButton.textContent = '...Thinking';
+         sendButton.disabled = true;
+
+         try {
+        // ✅ Corrected fetch call
+           const response = await fetch("{{ url_for('api_chat') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userMessage })
+          });
+
+          const result = await response.json();
+          console.log("DEBUG Chatbot Response:", result);
+
+          if (response.ok && result.status === 'success') {
+            appendMessage(result.reply, 'ai');
+          } else {
+            const errorMsg = result.error || result.error_note || "An unknown error occurred while getting the AI response.";
+            appendMessage(errorMsg, 'error');
+            console.error('Chat API Error:', errorMsg);
+          }
+         } catch (error) {
+          appendMessage("Network connection failed. Check your connection or the server status.", 'error');
+          console.error('Fetch Error:', error);
+         } finally {
+         chatInput.disabled = false;
+         sendButton.textContent = originalButtonText;
+         sendButton.disabled = false;
+         chatInput.focus();
+          }
+  }
+        // Placeholder helper functions (retained for now)
+        function showMessage(title, message, color) { alert(`${title}:\n${message}`); } 
+        function bookAppointment(e) { e.preventDefault(); showMessage('Booking', 'Booking simulated.', 'success'); e.target.reset(); 
+                const appointmentsTab = document.querySelector('[data-section="appointments"]');
+    if (appointmentsTab) {
+        appointmentsTab.click();
+    }
+        }
+        // MODIFIED: Simplified the uploadRecord placeholder function
+        async function uploadRecord(e) { 
+    e.preventDefault(); 
+    
+    const form = e.target;
+    const fileInput = document.getElementById('document_file');
+    const descriptionInput = document.getElementById('document_description');
+    const uploadBtn = document.getElementById('upload-btn');
+    const progressDiv = document.getElementById('upload-progress');
+    
+    if (!fileInput.files[0]) {
+        showNotification('Please select a file', 'error');
+        return;
+    }
+    
+    // Show progress and disable button
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading...';
+    progressDiv.classList.remove('hidden');
+    
+    const formData = new FormData();
+    formData.append('document_file', fileInput.files[0]);
+    formData.append('document_description', descriptionInput.value);
+    
+    try {
+        const response = await fetch("/upload_record", {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showNotification('Document uploaded successfully! ✅', 'success');
+            form.reset();
+            // Reload records to show the new upload
+            await loadRecords();
+        } else {
+            showNotification(result.message || 'Upload failed', 'error');
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        showNotification('Network error during upload', 'error');
+    } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload Document';
+        progressDiv.classList.add('hidden');
+    }
+}
+
+// --- Load Records Dynamically ---
+async function loadRecords() {
+    const container = document.getElementById('records-container');
+    
+    // Show loading state
+    container.innerHTML = `
+        <div class="text-center text-gray-500 py-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-700 mx-auto mb-2"></div>
+            <p>Loading records...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch("/get_records");
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            if (result.records.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-400 mb-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        <p class="text-gray-500 font-medium">No records found</p>
+                        <p class="text-sm text-gray-400 mt-1">Upload your first medical document above!</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = result.records.map(record => {
+                    const fileExt = record.file_name.split('.').pop().toLowerCase();
+                    const isPDF = fileExt === 'pdf';
+                    const isImage = ['jpg', 'jpeg', 'png'].includes(fileExt);
+                    
+                    let bgColor, textColor, icon;
+                    if (isPDF) {
+                        bgColor = 'bg-blue-50 border-blue-200';
+                        textColor = 'text-blue-800';
+                        icon = '📄';
+                    } else if (isImage) {
+                        bgColor = 'bg-purple-50 border-purple-200';
+                        textColor = 'text-purple-800';
+                        icon = '🖼️';
+                    } else {
+                        bgColor = 'bg-gray-50 border-gray-200';
+                        textColor = 'text-gray-800';
+                        icon = '📎';
+                    }
+                    
+                    return `
+                        <div class="p-4 border ${bgColor} rounded-lg flex justify-between items-center info-card animate-fadeIn">
+                            <div class="flex-1">
+                                <p class="font-semibold ${textColor} flex items-center">
+                                    <span class="text-2xl mr-2">${icon}</span>
+                                    ${record.description || 'Medical Document'}
+                                </p>
+                                <p class="text-xs text-gray-600 mt-1">
+                                    Type: ${fileExt.toUpperCase()} 
+                                    ${record.file_size ? `| Size: ${record.file_size}` : ''}
+                                    | Uploaded: ${formatDate(record.upload_date)}
+                                </p>
+                                <p class="text-xs text-gray-400 mt-1 truncate max-w-md" title="${record.file_name}">
+                                    ${record.file_name}
+                                </p>
+                            </div>
+                            <div class="flex space-x-2 ml-4">
+                                <a href="${record.download_url}" target="_blank" 
+                                   class="text-sm ${textColor.replace('800', '600')} hover:${textColor} font-medium px-3 py-2 rounded-lg border ${bgColor} transition flex items-center space-x-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    <span>View</span>
+                                </a>
+                                <button onclick="deleteRecord(${record.id}, '${escapeHtml(record.description || record.file_name)}')" 
+                                        class="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-2 rounded-lg border border-red-100 bg-red-50 transition flex items-center space-x-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } else {
+            container.innerHTML = `
+                <div class="text-center text-red-500 py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    <p class="font-medium">Failed to load records</p>
+                    <button onclick="loadRecords()" class="mt-2 text-sm text-violet-600 hover:text-violet-800 underline">Try Again</button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Load records error:', error);
+        container.innerHTML = `
+            <div class="text-center text-red-500 py-8">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <p class="font-medium">Network error loading records</p>
+                <p class="text-sm text-gray-500 mt-1">Please check your connection and try again</p>
+                <button onclick="loadRecords()" class="mt-3 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">Retry</button>
+            </div>
+        `;
+    }
+}
+
+// --- Delete Record ---
+async function deleteRecord(recordId, fileName) {
+    if (!confirm(`Are you sure you want to delete "${fileName}"?\n\nThis action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch("/delete_record", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ record_id: recordId })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showNotification('Record deleted successfully! 🗑️', 'success');
+            await loadRecords();
+        } else {
+            showNotification(result.message || 'Delete failed', 'error');
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        showNotification('Network error during deletion', 'error');
+    }
+}
+
+// --- Notification Helper ---
+function showNotification(message, type) {
+    // Remove any existing notifications
+    const existing = document.querySelectorAll('.notification-toast');
+    existing.forEach(el => el.remove());
+    
+    const container = document.createElement('div');
+    container.className = `notification-toast fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 max-w-md ${
+        type === 'success' ? 'bg-green-100 text-green-800 border border-green-300' :
+        type === 'error' ? 'bg-red-100 text-red-800 border border-red-300' :
+        'bg-blue-100 text-blue-800 border border-blue-300'
+    }`;
+    
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+    
+    container.innerHTML = `
+        <div class="flex items-start space-x-3">
+            <span class="text-xl">${icon}</span>
+            <div class="flex-1">
+                <p class="font-semibold text-sm">${message}</p>
+            </div>
+            <button onclick="this.closest('.notification-toast').remove()" 
+                    class="text-gray-600 hover:text-gray-800 font-bold text-lg leading-none">
+                ×
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(container);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        container.style.opacity = '0';
+        container.style.transform = 'translateX(100%)';
+        setTimeout(() => container.remove(), 300);
+    }, 4000);
+}
+
+// --- Helper Functions ---
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch {
+        return dateString;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
+// --- Add to window.onload ---
+// Make sure to call loadRecords if starting on records section
+window.addEventListener('DOMContentLoaded', function() {
+    const initialSection = '{{ active_section or "symptom" }}';
+    
+    // If initial section is records, load them
+    if (initialSection === 'records') {
+        loadRecords();
+    }
+});
+document.addEventListener("DOMContentLoaded", function () {
+    let selected = [];
+    const container = document.getElementById("symptoms");
+
+    if (!container) {
+        console.error("Symptoms container not found");
+        return;
+    }
+
+
+    // ✅ Step 1: Fetch symptoms from Flask API
+    fetch('/get_symptoms')
+      .then(res => res.json())
+      .then(symptoms => {
+        symptoms.forEach(sym => {
+          const div = document.createElement("div");
+          div.className = "symptom";
+          div.textContent = sym;
+
+          div.onclick = () => {
+            div.classList.toggle("selected");
+            if (selected.includes(sym)) {
+              selected = selected.filter(s => s !== sym);
+            } else {
+              selected.push(sym);
+            }
+          };
+
+          container.appendChild(div);
+        });
+      })
+      .catch(err => {
+        console.error("Error loading symptoms:", err);
+        document.getElementById("result").textContent = "❌ Could not load symptoms.";
+      });
+
+    // ✅ Step 2: Predict button logic
+    const predictBtn = document.getElementById("predict");
+    if (predictBtn) {
+        predictBtn.onclick = async () => {
+            const resultEl = document.getElementById("result");
+            if (!resultEl) return;
+
+            if (selected.length === 0) {
+                resultEl.textContent = "⚠️ Please select at least one symptom.";
+                return;
+            }
+
+            try {
+                console.log("DEBUG Sending Predict Request:", { symptoms: selected });
+                const res = await fetch('/predict', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ symptoms: selected }),
+                });
+
+                const data = await res.json();
+                console.log("DEBUG Predict Response:", data);
+                if (data.status === 'success' && data.disease) {
+                    resultEl.innerHTML = "🩺 Predicted Disease: <strong>" + data.disease + "</strong>";
+                } else {
+                    resultEl.textContent = "❌ Could not get result: " + (data.message || "");
+                }
+            } catch (err) {
+                resultEl.textContent = "❌ Error contacting Flask backend.";
+                console.error("Prediction Error:", err);
+            }
+        };
+    }
+});
+    </script>
+</body>
+</html>

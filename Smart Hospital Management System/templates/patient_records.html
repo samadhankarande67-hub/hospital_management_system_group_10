@@ -1,0 +1,73 @@
+{% extends "base_admin.html" %}
+
+{% block title %}My Health Records - Smart Hospital Management System{% endblock %}
+{% block page_title %}Health Records{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <h4 style="color: #2d3748; font-weight: 700; margin: 0;">
+        <i class="fas fa-file-medical"></i> Health Records — {{ patient_name }}
+    </h4>
+    <a href="{{ url_for('patient_dashboard') }}" class="btn btn-secondary" style="text-decoration: none;">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+{% if records %}
+<div class="table-container">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>File Name</th>
+                    <th>Description</th>
+                    <th>Upload Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record['record_id'] }}</td>
+                    <td>
+                        {% set ext = record['file_name'].rsplit('.', 1)[-1].upper() %}
+                        {% if ext == 'PDF' %}
+                            <span class="badge" style="background:#dbeafe;color:#1e40af;">PDF</span>
+                        {% elif ext in ['JPG','JPEG','PNG'] %}
+                            <span class="badge" style="background:#ede9fe;color:#5b21b6;">IMG</span>
+                        {% else %}
+                            <span class="badge" style="background:#f3f4f6;color:#374151;">{{ ext }}</span>
+                        {% endif %}
+                        {{ record['file_name'] }}
+                    </td>
+                    <td>{{ record['description'] if record['description'] else '—' }}</td>
+                    <td>{{ record['upload_date'] }}</td>
+                    <td>
+                        <a href="{{ url_for('view_record', record_id=record['record_id']) }}"
+                           target="_blank" class="action-btn btn-action">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <a href="{{ url_for('download_record', record_id=record['record_id']) }}"
+                           class="action-btn btn-success-action">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="table-container">
+    <div style="padding: 60px; text-align: center; color: #718096;">
+        <i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+        <p style="font-size: 16px; margin: 0;">No health records found.</p>
+        <p style="margin-top: 8px; font-size: 14px;">Upload documents from your
+            <a href="{{ url_for('patient_dashboard') }}">dashboard</a>.
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,230 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Smart Hospital Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --violet-900: #3730A3;
+            --violet-700: #5B21B6;
+            --green-500: #10B981;
+            --green-600: #059669;
+            --sidebar-dark: #2C3E50;
+            --sidebar-active: var(--green-600);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+        .sidebar-item-active {
+            background-color: var(--sidebar-active);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .info-card {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease-in-out;
+        }
+        .info-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            transform: translateY(-1px);
+        }
+        /* Define custom Tailwind classes for status */
+        .status-pending { 
+            background-color: #FEF3C7; /* yellow-100 equivalent */
+            color: #B45309; /* amber-800 equivalent */
+        }
+        .status-approved { 
+            background-color: #D1FAE5; /* green-100 equivalent */
+            color: #065F46; /* green-800 equivalent */
+        }
+        .status-rejected { 
+            background-color: #FEE2E2; /* red-100 equivalent */
+            color: #991B1B; /* red-800 equivalent */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="doctor-dashboard-view" class="w-full h-full flex-grow">
+        <div class="flex h-full min-h-screen">
+            <aside class="w-64 text-white shadow-xl flex flex-col py-4 px-2 sticky top-0" style="background-color: var(--sidebar-dark);">
+                <div class="px-4 pt-4 pb-6 text-2xl font-bold text-center text-green-500 border-b border-gray-700 mb-2">
+                    Dr. {{ doctor_name }}
+                </div>
+                <p class="text-center text-gray-400 text-sm mb-4">Doctor Hub</p>
+
+                <nav class="flex-grow space-y-2">
+                    <a href="{{ url_for('doctor_panel') }}" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-200 hover:bg-gray-700 transition sidebar-nav-item {% if active_section == 'appointments' or not active_section %}sidebar-item-active{% endif %}" data-section="appointments">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m10 16 2 2 4-4"/></svg>
+                        <span>Appointments</span>
+                    </a>
+    
+                    <a href="{{ url_for('doctor_profile') }}" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-200 hover:bg-gray-700 transition sidebar-nav-item {% if active_section == 'profile' %}sidebar-item-active{% endif %}" data-section="profile">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Profile</span>
+                    </a>
+                </nav>
+                <div class="mt-auto px-4 pt-4 border-t border-gray-700">
+                    <a href="{{ url_for('logout') }}" class="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-gray-700 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </aside>
+            
+            <div class="flex-1 p-8 overflow-y-auto bg-gray-50">
+                <h1 class="text-3xl font-extrabold text-gray-800 mb-8 border-b pb-3" id="dashboard-title"></h1>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="p-3 mb-4 rounded-lg text-sm text-center 
+                                {% if category == 'success' %}bg-green-100 text-green-800
+                                {% elif category == 'danger' %}bg-red-100 text-red-800
+                                {% else %}bg-blue-100 text-blue-800{% endif %}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div id="doctor-sections-container">
+                    
+                    <section id="doctor-appointments-section" class="doctor-section 
+                        {% if active_section and active_section != 'appointments' %}hidden{% endif %}">
+                        <div id="appointment-requests-list" class="space-y-6">
+                            
+                            {% if appointments %}
+                                {% for appt in appointments %}
+                                    {% set status_text = appt['Status'] %}
+                                    {% set status_classes = 'status-pending' if status_text == 'Pending' else 'status-approved' %}
+                                    {% if status_text == 'Rejected' %}
+                                        {% set status_classes = 'status-rejected' %}
+                                    {% endif %}
+                                    
+                                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 info-card">
+                                        <div class="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h3 class="text-xl font-bold">{{ appt['patient_name'] }}</h3> 
+                                                <p class="text-gray-600 mb-2">Patient Appointment Request</p> 
+                                            </div>
+                                            <span class="text-xs font-semibold px-3 py-1 rounded-full {{ status_classes }}">{{ status_text }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-sm text-gray-600 mb-4">
+                                            <p>Date: **{{ appt['appointment_date'] }}**</p>
+                                            <p>Time: **{{ appt['appointment_time'] }}**</p>
+                                        </div>
+
+                                        {% if status_text == 'Pending' %}
+                                            <div class="flex space-x-3">
+                                                <form method="POST" action="{{ url_for('update_status', appointment_id=appt['App_ID'], status='Approved') }}" style="display:inline;">
+                                                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-600 transition">
+                                                        Approve
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ url_for('update_status', appointment_id=appt['App_ID'], status='Rejected') }}" style="display:inline;">
+                                                    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition">
+                                                        Reject
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        {% else %}
+                                            <p class="text-sm text-gray-500">Status: {{ status_text }}. No further action needed.</p>
+                                        {% endif %}
+
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+                                    <p class="text-center text-gray-500">No new appointment requests at this time.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </section>
+
+                    <section id="doctor-patients-section" class="doctor-section hidden">
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Patient Search and History</h3>
+                            <p>Content for searching and viewing patient records goes here.</p>
+                        </div>
+                    </section>
+
+                    <section id="doctor-profile-section" class="doctor-section 
+                        {% if active_section != 'profile' %}hidden{% endif %}">
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 max-w-lg">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Your Professional Profile</h3>
+                            
+                            <form method="POST" action="{{ url_for('update_profile') }}" class="space-y-4">
+                                
+                                {% if profile_data %}
+                                <div>
+                                    <label for="profile-name" class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input type="text" id="profile-name" name="name" value="{{ profile_data.Name }}" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                                </div>
+                                <div>
+                                    <label for="profile-specialty" class="block text-sm font-medium text-gray-700">Specialty</label>
+                                    <input type="text" id="profile-specialty" name="specialty" value="{{ profile_data.specialty_name or 'General' }}" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                                </div>
+                                <div>
+                                    <label for="profile-bio" class="block text-sm font-medium text-gray-700">Biography</label>
+                                    <textarea rows="3" id="profile-bio" name="biography"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">{{ profile_data.biography }}</textarea>
+                                </div>
+                                {% else %}
+                                <p class="text-red-500">Error: Profile data is missing.</p>
+                                {% endif %}
+
+                                <button type="submit" class="bg-green-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-600 transition">
+                                    Update Profile
+                                </button>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // CLIENT-SIDE JS TO MANAGE VIEW TITLES AND ACTIVE STATES
+        window.onload = function() {
+            // Read active_section set by the Flask view
+            const activeSection = '{{ active_section or "appointments" }}'; 
+            
+            const titleMap = {
+                'appointments': 'Appointment Requests',
+                'profile': 'Doctor Profile'
+            };
+
+            // 1. Update the main dashboard title
+            document.getElementById('dashboard-title').textContent = titleMap[activeSection] || 'Dashboard';
+
+            // 2. Update active sidebar item
+            document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
+                btn.classList.remove('sidebar-item-active');
+                if (btn.getAttribute('data-section') === activeSection) {
+                     btn.classList.add('sidebar-item-active');
+                }
+            });
+            
+            // 3. Hide all sections that are not the active one (Flask only renders one, but for safety)
+            document.querySelectorAll('.doctor-section').forEach(el => {
+                if (el.id !== `doctor-${activeSection}-section`) {
+                    el.classList.add('hidden');
+                } else {
+                    el.classList.remove('hidden');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

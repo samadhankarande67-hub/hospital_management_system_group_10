@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Login/Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Violet gradient background for the login page */
+        body { font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #3730A3 0%, #5B21B6 100%); }
+    </style>
+</head>
+<body>
+    <div class="w-full max-w-md p-8 bg-white rounded-2xl shadow-2xl">
+        <h2 class="text-3xl font-bold text-center text-violet-700 mb-2">Patient Access</h2>
+        <p class="text-center text-gray-500 mb-8">Login or Register to begin symptom analysis.</p>
+
+         {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %} 
+                <div class="mb-4">
+                 {% for category, message in messages %} -->
+                    <div class="p-3 rounded-lg text-sm text-center bg-{{ 'green' if category == 'success' else 'red' if category == 'danger' else 'blue' }}-100 text-{{ 'green' if category == 'success' else 'red' if category == 'danger' else 'blue' }}-800" role="alert">
+                         {{ message }} 
+                    </div>
+                 {% endfor %} 
+                </div>
+             {% endif %}
+         {% endwith %}
+        <form method="POST" action="{{ url_for('patient_login') }}" class="space-y-4">
+            <div>
+                <label for="p-name" class="block text-sm font-medium text-gray-700 mb-1">Name (Required for New User)</label>
+                <input type="text" id="p-name" name="name" placeholder="Full Name" 
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-violet-500 focus:border-violet-500 transition">
+            </div>
+            <div>
+                <label for="p-email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input type="email" id="p-email" name="email" placeholder="patient@health.com" required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-violet-500 focus:border-violet-500 transition">
+            </div>
+            <div>
+                <label for="p-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" id="p-password" name="password" placeholder="••••••••" required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-violet-500 focus:border-violet-500 transition">
+            </div>
+            <div class="flex gap-4">
+                <button type="submit" name="action" value="login" class="w-1/2 py-3 bg-white text-violet-700 font-bold border-2 border-violet-700 rounded-xl shadow-lg hover:bg-violet-50 transition">
+                    Login
+                </button>
+                <button type="submit" name="action" value="register" class="w-1/2 py-3 bg-violet-700 text-white font-bold rounded-xl shadow-lg hover:bg-violet-800 transition">
+                    Register
+                </button>
+            </div>
+        </form>
+
+        <p class="mt-6 text-center text-sm">
+            <a href="{{ url_for('homepage') }}" class="text-violet-700 hover:text-violet-900 font-medium">
+                ← Back to Home
+            </a>
+        </p>
+    </div>
+</body>
+</html> 

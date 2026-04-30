@@ -1,0 +1,61 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Add Prescription - Smart Hospital Management System{% endblock %}
+{% block page_title %}Add Prescription{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); padding: 30px;">
+        <h4 style="color: #2d3748; font-weight: 700; margin-bottom: 25px;">
+            <i class="fas fa-prescription-bottle"></i> Add Prescription
+        </h4>
+        
+        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #667eea;">
+            <p style="margin: 0; color: #718096; font-size: 13px; font-weight: 500; text-transform: uppercase;">Appointment ID</p>
+            <p style="margin: 5px 0 0; color: #2d3748; font-weight: 600; font-size: 16px;">#{{ appointment_id }}</p>
+        </div>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-pills"></i> Medicine Name *</label>
+                <input type="text" class="form-control" name="medicine" placeholder="Enter medicine name" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-weight"></i> Dose *</label>
+                <input type="text" class="form-control" name="dose" placeholder="e.g., 500mg, 2 tablets" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-box"></i> Quantity *</label>
+                        <input type="number" class="form-control" name="quantity" placeholder="Number of tablets/pills" min="1" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-calendar-alt"></i> Days *</label>
+                        <input type="number" class="form-control" name="days" placeholder="Number of days" min="1" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: #c6f6d5; border-left: 4px solid #48bb78; padding: 15px; border-radius: 8px; margin-bottom: 25px; color: #22543d;">
+                <p style="margin: 0; font-size: 13px; font-weight: 500;">
+                    <i class="fas fa-info-circle"></i> Make sure all details are correct before saving.
+                </p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;">
+                <a href="{{ url_for('doctor_panel') }}" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Prescription
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

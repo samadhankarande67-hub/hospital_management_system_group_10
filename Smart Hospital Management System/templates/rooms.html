@@ -1,0 +1,173 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Room Management - Smart Hospital Management System{% endblock %}
+{% block page_title %}Room Management{% endblock %}
+
+{% block content %}
+<h4 style="color: #2d3748; font-weight: 700; margin-bottom: 30px;">
+    <i class="fas fa-door-open"></i> Hospital Rooms
+</h4>
+
+{% if rooms %}
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+    {% for room in rooms %}
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden; transition: all 0.3s ease;"
+         onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0, 0, 0, 0.1)'"
+         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0, 0, 0, 0.07)'">
+        <div style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h5 style="margin: 0; font-weight: 700;">Room #{{ room['Room_ID'] }}</h5>
+                <span class="badge" style="background: rgba(255, 255, 255, 0.3); color: white;">
+                    {% if room['Status'] == 'Available' %}
+                    <i class="fas fa-check-circle"></i> Available
+                    {% else %}
+                    <i class="fas fa-times-circle"></i> Occupied
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <div style="padding: 20px;">
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 5px; color: #718096; font-size: 13px; font-weight: 500; text-transform: uppercase;">Type</p>
+                <p style="margin: 0; color: #2d3748; font-weight: 600;">{{ room['Room_Type'] }}</p>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 5px; color: #718096; font-size: 13px; font-weight: 500; text-transform: uppercase;">Charges</p>
+                <p style="margin: 0; color: #2d3748; font-weight: 600;">Rs. {{ room['Charges'] }}/day</p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <p style="margin: 0 0 5px; color: #718096; font-size: 13px; font-weight: 500; text-transform: uppercase;">Capacity</p>
+                <p style="margin: 0; color: #2d3748; font-weight: 600;">{{ room['Capacity'] }} {% if room['Capacity'] == 1 %}Person{% else %}People{% endif %}</p>
+            </div>
+            
+            {% if room['patient_name'] %}
+            <div style="margin-bottom: 20px; padding: 12px; background: #f7fafc; border-radius: 8px;">
+                <p style="margin: 0 0 5px; color: #718096; font-size: 13px; font-weight: 500;">Current Occupant</p>
+                <p style="margin: 0; color: #2d3748; font-weight: 600;">{{ room['patient_name'] }}</p>
+            </div>
+            {% endif %}
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                {% if room['Status'] == 'Available' %}
+                <button class="action-btn btn-action" onclick="assignRoomFromCard({{ room['Room_ID'] }})" style="width: 100%;">
+                    <i class="fas fa-user-plus"></i> Assign
+                </button>
+                {% else %}
+                <button class="action-btn btn-success-action" onclick="freeRoom({{ room['Patient_ID'] }})" style="width: 100%;">
+                    <i class="fas fa-times"></i> Free
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); padding: 60px; text-align: center; color: #718096;">
+    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+    <p style="font-size: 16px; margin: 0;">No rooms found in the system.</p>
+</div>
+{% endif %}
+
+<!-- Assign Room Modal -->
+<div class="modal fade" id="assignRoomCardModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Room to Patient</h5>
+                <button type="button" class="btn-close btn-close-white"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignRoomCardForm">
+                    <div class="form-group">
+                        <label class="form-label">Select Patient</label>
+                        <select class="form-control" id="patientSelect" required>
+                            <option value="">Choose a patient...</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitAssignRoomFromCard()">Assign</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedRoomId = null;
+
+function assignRoomFromCard(roomId) {
+    selectedRoomId = roomId;
+    const patientSelect = document.getElementById('patientSelect');
+    
+    // Fetch all patients to populate the dropdown
+    fetch('/api/available_patients')
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.patients) {
+                patientSelect.innerHTML = '<option value="">Choose a patient...</option>';
+                data.patients.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.patient_id;
+                    opt.textContent = `${p.name} (ID: ${p.patient_id})`;
+                    patientSelect.appendChild(opt);
+                });
+            }
+            const modal = new bootstrap.Modal(document.getElementById('assignRoomCardModal'));
+            modal.show();
+        })
+        .catch(err => {
+            console.error('Failed to load patients:', err);
+            const modal = new bootstrap.Modal(document.getElementById('assignRoomCardModal'));
+            modal.show();
+        });
+}
+
+function submitAssignRoomFromCard() {
+    const patientId = document.getElementById('patientSelect').value;
+    if (!patientId) {
+        alert('Please select a patient');
+        return;
+    }
+    
+    fetch(`/assign_room`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient_id: parseInt(patientId), room_id: selectedRoomId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Room assigned successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => alert('Error: ' + error));
+}
+
+function freeRoom(patientId) {
+    if (confirm('Are you sure you want to free this patient from the room?')) {
+        fetch(`/free_room/${patientId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Room freed successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => alert('Error: ' + error));
+    }
+}
+</script>
+{% endblock %}

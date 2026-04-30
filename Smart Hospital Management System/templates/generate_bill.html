@@ -1,0 +1,99 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Generate Bill - Smart Hospital Management System{% endblock %}
+{% block page_title %}Generate Bill{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); padding: 30px;">
+        <h4 style="color: #2d3748; font-weight: 700; margin-bottom: 25px;">
+            <i class="fas fa-file-invoice-dollar"></i> Generate Bill
+        </h4>
+
+        {% if patient %}
+        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #667eea;">
+            <p style="margin: 0; color: #718096; font-size: 13px; font-weight: 500; text-transform: uppercase;">Patient</p>
+            <p style="margin: 5px 0 0; color: #2d3748; font-weight: 600; font-size: 16px;">{{ patient['name'] }}</p>
+        </div>
+        {% endif %}
+
+        <form method="POST">
+
+            {% if not patient %}
+            <!-- FIX 6: Patient dropdown when no patient pre-selected -->
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-user"></i> Select Patient *</label>
+                <select class="form-control" name="patient_id" required>
+                    <option value="">-- Choose Patient --</option>
+                    {% if patients %}
+                        {% for p in patients %}
+                        <option value="{{ p['Patient_ID'] }}">{{ p['name'] }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option disabled>No patients found</option>
+                    {% endif %}
+                </select>
+            </div>
+            {% else %}
+            <input type="hidden" name="patient_id" value="{{ patient_id }}">
+            {% endif %}
+
+            <!-- FIX 5: Renamed from "amount" to "total_amount" to match backend -->
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-dollar-sign"></i> Amount (Rs.) *</label>
+                <input type="number" class="form-control" name="total_amount" id="amountInput"
+                       placeholder="0.00" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-credit-card"></i> Payment Mode *</label>
+                <select class="form-control" name="payment_mode" required>
+                    <option value="">Select payment mode...</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card/Debit Card</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Insurance">Insurance</option>
+                    <option value="Online">Online Transfer</option>
+                    <option value="Cheque">Cheque</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-file-alt"></i> Description (Optional)</label>
+                <textarea class="form-control" name="description"
+                          placeholder="Services, room charges, etc." rows="3"></textarea>
+            </div>
+
+            <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0 0 10px; color: #718096; font-size: 13px; font-weight: 500; text-transform: uppercase;">Bill Summary</p>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #4a5568;">Amount:</span>
+                    <span style="font-weight: 600; color: #2d3748;">Rs. <span id="amountDisplay">0</span></span>
+                </div>
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between;">
+                    <span style="color: #2d3748; font-weight: 600;">Total Amount:</span>
+                    <span style="font-weight: 700; color: #48bb78; font-size: 18px;">Rs. <span id="totalDisplay">0</span></span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;">
+                <a href="{{ url_for('view_bills') }}" class="btn btn-secondary"
+                   style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-arrow-left"></i>&nbsp; Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>&nbsp; Generate &amp; Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('amountInput').addEventListener('input', function() {
+    const amount = this.value || 0;
+    document.getElementById('amountDisplay').textContent = amount;
+    document.getElementById('totalDisplay').textContent = amount;
+});
+</script>
+{% endblock %}

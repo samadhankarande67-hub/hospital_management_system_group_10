@@ -1,0 +1,117 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Dashboard - Smart Hospital Management System{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    .primary-card { --color: #667eea; --light-color: rgba(102, 126, 234, 0.1); }
+    .success-card { --color: #48bb78; --light-color: rgba(72, 187, 120, 0.1); }
+    .warning-card { --color: #f6ad55; --light-color: rgba(246, 173, 85, 0.1); }
+    .danger-card { --color: #f56565; --light-color: rgba(245, 101, 101, 0.1); }
+    .info-card { --color: #4299e1; --light-color: rgba(66, 153, 225, 0.1); }
+    .purple-card { --color: #9f7aea; --light-color: rgba(159, 122, 234, 0.1); }
+    
+    .stat-card-icon {
+        background: var(--light-color);
+        color: var(--color);
+    }
+</style>
+
+<div class="stats-grid">
+    <div class="stat-card primary-card">
+        <div class="stat-card-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-card-title">Total Patients</div>
+        <div class="stat-card-value">{{ patient_count }}</div>
+    </div>
+    
+    <div class="stat-card success-card">
+        <div class="stat-card-icon">
+            <i class="fas fa-user-md"></i>
+        </div>
+        <div class="stat-card-title">Total Doctors</div>
+        <div class="stat-card-value">{{ doctor_count }}</div>
+    </div>
+    
+    <div class="stat-card warning-card">
+        <div class="stat-card-icon">
+            <i class="fas fa-door-open"></i>
+        </div>
+        <div class="stat-card-title">Total Rooms</div>
+        <div class="stat-card-value">{{ room_count }}</div>
+    </div>
+    
+    <div class="stat-card danger-card">
+        <div class="stat-card-icon">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="stat-card-title">Total Appointments</div>
+        <div class="stat-card-value">{{ appointment_count }}</div>
+    </div>
+</div>
+
+<div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden;">
+    <div style="padding: 25px; border-bottom: 1px solid #edf2f7;">
+        <h5 style="color: #2d3748; font-weight: 700; margin: 0;">
+            <i class="fas fa-calendar-alt"></i> Recent Appointments
+        </h5>
+    </div>
+    
+    {% if recent_appointments %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>App ID</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appt in recent_appointments %}
+                <tr>
+                    <td>#{{ appt['App_ID'] }}</td>
+                    <td><strong>{{ appt['patient_name'] }}</strong></td>
+                    <td>Dr. {{ appt['doctor_name'] }}</td>
+                    <td>{{ appt['appointment_date'] }}</td>
+                    <td>
+                        {% if appt['Status'] == 'Pending' %}
+                            <span class="badge" style="background: #feebc8; color: #7c2d12;">Pending</span>
+                        {% elif appt['Status'] == 'Approved' %}
+                            <span class="badge" style="background: #c6f6d5; color: #22543d;">Approved</span>
+                        {% else %}
+                            <span class="badge" style="background: #fed7d7; color: #742a2a;">Rejected</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 40px; text-align: center; color: #718096;">
+        <i class="fas fa-inbox" style="font-size: 32px; margin-bottom: 15px; opacity: 0.5;"></i>
+        <p>No appointments found</p>
+    </div>
+    {% endif %}
+</div>
+
+<div style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+    <a href="{{ url_for('add_patient') }}" class="btn btn-primary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px;">
+        <i class="fas fa-user-plus"></i> Add Patient
+    </a>
+    <a href="{{ url_for('add_doctor') }}" class="btn btn-primary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px;">
+        <i class="fas fa-user-md"></i> Add Doctor
+    </a>
+    <a href="{{ url_for('rooms') }}" class="btn btn-primary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px;">
+        <i class="fas fa-door-open"></i> Manage Rooms
+    </a>
+    <a href="{{ url_for('generate_bill') }}" class="btn btn-primary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px;">
+        <i class="fas fa-file-invoice-dollar"></i> Generate Bill
+    </a>
+</div>
+{% endblock %}
